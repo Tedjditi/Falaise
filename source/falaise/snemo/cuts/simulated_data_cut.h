@@ -41,8 +41,14 @@
 #include <boost/cstdint.hpp>
 // - Bayeux/datatools:
 #include <datatools/bit_mask.h>
+// - Bayeux/mctools:
+#include <bayeux/mctools/simulated_data.h>
+
+
 // - Bayeux/cuts:
 #include <cuts/i_cut.h>
+// - Bayeux/geomtools:
+#include <bayeux/geomtools/clhep.h>
 
 namespace datatools {
 class service_manager;
@@ -62,7 +68,9 @@ class simulated_data_cut : public cuts::i_cut {
     MODE_HAS_HIT_CATEGORY = datatools::bit_mask::bit01,  // simulated_data::has_step_hits
     MODE_RANGE_HIT_CATEGORY =
         datatools::bit_mask::bit02,                     // simulated_data::get_number_of_step_hits
-    MODE_HAS_HIT_PROPERTY = datatools::bit_mask::bit03  //
+    MODE_HAS_HIT_PROPERTY = datatools::bit_mask::bit03,  //
+    MODE_GAMMA_HAS_GONE_STRAIGHT = datatools::bit_mask::bit04,
+    MODE_HAS_HIT_ON_WALL = datatools::bit_mask::bit05
   };
 
   /// Set the SD bank key
@@ -86,6 +94,12 @@ class simulated_data_cut : public cuts::i_cut {
   /// Check mode MODE_HAS_HIT_PROPERTY:
   bool is_mode_has_hit_property() const;
 
+  /// Check mode _MODE_GAMMA_HAS_GONE_STRAIGHT:
+  bool is_mode_gamma_has_gone_straight() const;
+
+  /// Check mode _MODE_HAS_HIT_ON_WALL:
+  bool is_mode_has_hit_on_wall() const;
+  
   /// Set the name of cut mode MODE_FLAG
   void set_flag_name(const std::string& flag_name_);
 
@@ -102,6 +116,14 @@ class simulated_data_cut : public cuts::i_cut {
   virtual void initialize(const datatools::properties& configuration_,
                           datatools::service_manager& service_manager_,
                           cuts::cut_handle_dict_type& cut_dict_);
+
+  //  Check if gamma_has_gone_straight
+  bool is_inside_volume(const geomtools::vector_3d& Position);
+  bool is_colinear(mctools::simulated_data::hit_handle_collection_type::const_iterator it_t_min, mctools::simulated_data::hit_handle_collection_type::const_iterator it_t_max);
+  bool is_colinear(const mctools::simulated_data::hit_handle_collection_type& step_handle_track, const mctools::simulated_data::hit_handle_collection_type& step_handle_calo, int track_id);
+  
+  bool has_hit_on_target_wall(const mctools::simulated_data::hit_handle_collection_type& step_handle, double wall);
+  bool is_on_wall(mctools::simulated_data::hit_handle_collection_type::const_iterator it_step, double wall);
 
   /// Reset
   virtual void reset();
@@ -122,7 +144,11 @@ class simulated_data_cut : public cuts::i_cut {
   std::string _hit_category_;    //!< Name of the hit category to be checked
   int _hit_category_range_min_;  //!< Minimal number of hits in a category
   int _hit_category_range_max_;  //!< Maximal number of hits in a category
-
+  double _gamma_epsilonY_;
+  double _gamma_epsilonZ_;
+  int _first_;
+  int _last_;
+  double _wall_;
   std::string _hit_property_logic_;  //!< Logic operation between property selection
   typedef std::map<std::string, std::vector<std::string> > property_values_dict_type;
   property_values_dict_type

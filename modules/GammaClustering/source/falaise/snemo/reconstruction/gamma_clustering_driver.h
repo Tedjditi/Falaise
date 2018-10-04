@@ -48,7 +48,7 @@ class gamma_clustering_driver : public ::snemo::processing::base_gamma_builder {
  public:
   /// Typedef for list of geom ids
   typedef std::vector<geomtools::geom_id> gid_list_type;
-
+  typedef std::vector<double> list_type;
   /// Typedef for time ordered calorimeter hits aka. gamma cluster
   typedef std::map<double, const snemo::datamodel::calibrated_data::calorimeter_hit_handle_type>
       cluster_type;
@@ -94,7 +94,8 @@ class gamma_clustering_driver : public ::snemo::processing::base_gamma_builder {
 
   /// Associate clusters given Time-Of-Flight calculation
   virtual void _get_tof_association(const cluster_collection_type& from_clusters_,
-                                    cluster_collection_type& to_clusters_) const;
+                                    cluster_collection_type& to_clusters_,
+				    list_type& tof_list_) const;
 
   /// Return Time-Of-Flight probability between 2 calorimeter hits
   virtual double _get_tof_probability(

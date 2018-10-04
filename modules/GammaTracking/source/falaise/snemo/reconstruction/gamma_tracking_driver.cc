@@ -130,9 +130,8 @@ int gamma_tracking_driver::_process_algo(
   DT_LOG_TRACE(get_logging_priority(), "Entering...");
 
   // Running gamma tracking
-  _gt_.process();
   gt::gamma_tracking::solution_type gamma_tracks;
-  _gt_.get_reflects(gamma_tracks);
+  _gt_.process(gamma_tracks);
   if (get_logging_priority() >= datatools::logger::PRIO_DEBUG) {
     DT_LOG_DEBUG(get_logging_priority(), "Number of gammas = " << gamma_tracks.size());
     _gt_.dump();

@@ -1,5 +1,6 @@
 /// \file falaise/snemo/reconstruction/gamma_clustering_driver.cc
 
+
 // Ourselves:
 #include <snemo/reconstruction/gamma_clustering_driver.h>
 
@@ -25,6 +26,8 @@
 #include <falaise/snemo/geometry/xcalo_locator.h>
 #include <falaise/snemo/processing/services.h>
 
+#include <cstdlib>
+#include <cmath>
 namespace snemo {
 
 namespace reconstruction {
@@ -153,13 +156,18 @@ int gamma_clustering_driver::_process_algo(
       }
     }
   }
+  list_type tof_list_;
 
   /*A : Carry on with tracking*/
   cluster_collection_type the_reconstructed_gammas;
-  _get_tof_association(the_reconstructed_clusters, the_reconstructed_gammas);
+  _get_tof_association(the_reconstructed_clusters, the_reconstructed_gammas,tof_list_);
 
   /*B : Stop here, with simple clustering*/
   // cluster_collection_type the_reconstructed_gammas = the_reconstructed_clusters;
+
+// ici set particle proba combinaison
+ int rand_i = 0;
+ int iterator_proba = 0;
 
   // Set new particles within 'particle track data' container
   for (size_t i = 0; i < the_reconstructed_gammas.size(); ++i) {
@@ -168,6 +176,10 @@ int gamma_clustering_driver::_process_algo(
     ptd_.add_particle(hPT);
     hPT.grab().set_track_id(ptd_.get_number_of_particles());
     hPT.grab().set_charge(snemo::datamodel::particle_track::neutral);
+
+
+ 
+    //hPT.grab().grab_auxiliaries().store("tof_list",tof_list_);
 
     const cluster_type& a_cluster = the_reconstructed_gammas.at(i);
     for (cluster_type::const_iterator j = a_cluster.begin(); j != a_cluster.end(); ++j) {
@@ -208,7 +220,21 @@ int gamma_clustering_driver::_process_algo(
         DT_THROW_IF(true, std::logic_error,
                     "Current geom id '" << a_gid << "' does not match any scintillator block !");
       }
+
       spot.grab_auxiliaries().store(snemo::datamodel::particle_track::vertex_type_key(), label);
+      spot.grab_auxiliaries().store("proba",j->first);
+
+      int size_list = tof_list_.size();
+      if (!tof_list_.empty() && iterator_proba < size_list ){
+      	rand_i = rand();
+      	
+      	rand_i = rand_i % size_list;
+	spot.grab_auxiliaries().store("tof_list_",tof_list_.at(iterator_proba));
+	iterator_proba++;
+      }      
+
+      
+
       spot.set_blur_dimension(geomtools::blur_spot::dimension_three);
       spot.set_position(position);
     }
@@ -338,7 +364,8 @@ void gamma_clustering_driver::_get_time_neighbours(cluster_type& cluster_,
 
 void gamma_clustering_driver::_get_tof_association(
     const cluster_collection_type& the_reconstructed_clusters,
-    cluster_collection_type& the_reconstructed_gammas) const {
+    cluster_collection_type& the_reconstructed_gammas,
+    list_type& tof_list_) const {
   /*****  Associate clusters from TOF callculations  *****/
   // Store the indices of the two clusters to be later concatenated
   std::map<size_t, size_t> merge_indices;
@@ -348,6 +375,7 @@ void gamma_clustering_driver::_get_tof_association(
 
     // Retrieve the last calorimeter for check in quality
     cluster_type::const_reverse_iterator it_head = a_cluster.rbegin();
+    std::map<double, size_t> possible_clusters_association;
 
     // The algo tries to find a tail to a head
     for (; it_head != a_cluster.rend(); ++it_head) {
@@ -357,7 +385,7 @@ void gamma_clustering_driver::_get_tof_association(
     if (it_head == a_cluster.rend()) it_head = a_cluster.rbegin();
 
     // Holds the probability from head->tail and the index of the tail
-    std::map<double, size_t> possible_clusters_association;
+   
 
     for (size_t j = i + 1; j < the_reconstructed_clusters.size(); ++j) {
       const cluster_type& next_cluster = the_reconstructed_clusters.at(j);
@@ -375,14 +403,16 @@ void gamma_clustering_driver::_get_tof_association(
       const snemo::datamodel::calibrated_calorimeter_hit& tail_begin_calo_hit =
           it_tail->second.get();
       const double tof_prob = _get_tof_probability(head_end_calo_hit, tail_begin_calo_hit);
+
+      tof_list_.push_back(tof_prob);
       if (tof_prob > _min_prob_) {
         // Keep all possible solutions
-        possible_clusters_association.insert(std::make_pair(tof_prob, j));
+        possible_clusters_association.insert(std::make_pair(tof_prob, j)); //proba dans possible_clusters_asso perdu après 
       }
     }  // end of second loop on cluster
 
     if (possible_clusters_association.empty()) continue;
-
+    std::cout<<possible_clusters_association.size()<<" 0 "<<std::endl;
     // The probability distribution is flat so above P=50%, there are as much
     // chances for a 51% pair and a 99% to be the correct pair. Here, it
     // arbitrarily chooses the first pair built

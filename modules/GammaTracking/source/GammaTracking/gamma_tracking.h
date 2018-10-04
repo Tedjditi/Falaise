@@ -14,26 +14,26 @@
 #include <GammaTracking/event.h>
 
 namespace datatools {
-class properties;
+  class properties;
 }
 
 namespace gt {
 
-class event;
+  class event;
 
-//! Implementation of the gamma tracking and combinator
-/*!
- * 2011-2012 Hugon Christophe CENBG
- *
- * The gamma tracking object is a combinator of integers in fonction of
- * doubles.
- * The integers represents PMs or vertexes number, the doubles are probabilities calculations.\n
- * It can give the longest combinaison or the one which has the highest probability.
- * It need an external probability calculator (tof_tools for NAT++) which is
- * able to give the probability between two PMs, and then it calculate the
- * combinaisons with chi square probabilies with (NbPMs-1) degrees of freedom.
- *
- * The most standard usage is :\n
+  //! Implementation of the gamma tracking and combinator
+  /*!
+   * 2011-2012 Hugon Christophe CENBG
+   *
+   * The gamma tracking object is a combinator of integers in fonction of
+   * doubles.
+   * The integers represents PMs or vertexes number, the doubles are probabilities calculations.\n
+   * It can give the longest combinaison or the one which has the highest probability.
+   * It need an external probability calculator (tof_tools for NAT++) which is
+   * able to give the probability between two PMs, and then it calculate the
+   * combinaisons with chi square probabilies with (NbPMs-1) degrees of freedom.
+   *
+   * The most standard usage is :\n
 
  gamma_tracking gt;
  gt.add_prob(PM1, PM2, prob1);
@@ -46,88 +46,88 @@ class event;
 
  *
  */
-class gamma_tracking {
- public:
-  /// collection of integer, ref for "reference of PM"
-  typedef std::list<int> list_type;
+  class gamma_tracking {
+  public:
+    /// collection of integer, ref for "reference of PM"
+    typedef std::list<int> list_type;
 
-  /// 2D collection of integer, ref for "reference of PM"
-  typedef std::list<list_type> solution_type;
+    /// 2D collection of integer, ref for "reference of PM"
+    typedef std::list<list_type> solution_type;
+    
+    gamma_tracking();
+    gamma_tracking(const gamma_tracking&);
+    ~gamma_tracking();
 
-  /// Default constructor
-  gamma_tracking();
+    list_type fuse_calo_list(const list_type list1, const list_type list2);
+    
+    void set_logging_priority(datatools::logger::priority priority_);
 
-  /// Copy constructor
-  gamma_tracking(const gamma_tracking&);
+    /// Return the logging priority threshold
+    datatools::logger::priority get_logging_priority() const;
 
-  /// Default destructor
-  ~gamma_tracking();
+    /// Check the initialization flag
+    bool is_initialized() const;
 
-  /// Set the logging priority threshold
-  void set_logging_priority(datatools::logger::priority priority_);
+    /// Set the initialization flag
+    void set_initialized(bool);
+    void set_initialized_combi(bool);
+    /// Initialization from parameters
+    void initialize(const datatools::properties& config_);
 
-  /// Return the logging priority threshold
-  datatools::logger::priority get_logging_priority() const;
+    /// Check if contains calculated tracks
+    bool has_tracks();
 
-  /// Check the initialization flag
-  bool is_initialized() const;
+    /// Just add standalone gamma
+    /*!< For complete gamma tracking, gamma_tracking::get_reflect gives also alone gammas*/
+    void add(int number1_);
+		void add(int number1_, solution_type& _selected_gamma_);
+    /// Add 2 ref number combinaison with a proba in [0,1]
+    void add_probability(int number1_, int number2_, double proba_);
 
-  /// Set the initialization flag
-  void set_initialized(bool);
+    /// Add 2 ref number combinaison with a proba in [0,inf]
+    void add_chi2(int number1_, int number2_, double chi2_);
 
-  /// Initialization from parameters
-  void initialize(const datatools::properties& config_);
+    /// Add prestart.
+    /*!< It impose starts during combinaison. Faster calculations,
+      but less reliable than postarts. \sa gamma_tracking::get_reflects*/
+    void add_start(int number_);
 
-  /// Check if contains calculated tracks
-  bool has_tracks();
+    /// Check if an element of gamma_tracking::list_type values_ is in serie collection type
+    bool is_inside_serie(const list_type& values_) const;
 
-  /// Just add standalone gamma
-  /*!< For complete gamma tracking, gamma_tracking::get_reflect gives also alone gammas*/
-  void add(int number1_);
+    /// Check if an element of gamma_tracking::list_type values_ is in gamma_tracking::list_type
+    /// check_
+    bool is_inside(const list_type& check_, const list_type& values_) const;
 
-  /// Add 2 ref number combinaison with a proba in [0,1]
-  void add_probability(int number1_, int number2_, double proba_);
+    /// Check if value_ is in gamma_tracking::list_type check_
+    bool is_inside(const list_type& check_, int value_) const;
 
-  /// Add 2 ref number combinaison with a proba in [0,inf]
-  void add_chi2(int number1_, int number2_, double chi2_);
+    /// erase elements of gamma_tracking::list_type values_ is in gamma_tracking::list_type check_
+    void extract(list_type& source_, const list_type& values_);
 
-  /// Add prestart.
-  /*!< It impose starts during combinaison. Faster calculations,
-    but less reliable than postarts. \sa gamma_tracking::get_reflects*/
-  void add_start(int number_);
+    /// to_ become a unique elements list_type of from_+to_
+    void put_inside(const list_type& from_, list_type& to_);
 
-  /// Check if an element of gamma_tracking::list_type values_ is in serie collection type
-  bool is_inside_serie(const list_type& values_) const;
+    /// if true, only by prob, else by size and then by prob.
+    void set_absolute(bool a_);
 
-  /// Check if an element of gamma_tracking::list_type values_ is in gamma_tracking::list_type
-  /// check_
-  bool is_inside(const list_type& check_, const list_type& values_) const;
+    /// check gamma_tracking::set_absolute
+    bool is_absolute();
 
-  /// Check if value_ is in gamma_tracking::list_type check_
-  bool is_inside(const list_type& check_, int value_) const;
+		void set_print(bool p_);
+		void set_print_size(bool p_);
+		bool is_to_print();
+		bool is_to_print_size();
+    /// if true, forbid the starts to be elsewhere than at start
+    void set_extern(bool e_);
 
-  /// erase elements of gamma_tracking::list_type values_ is in gamma_tracking::list_type check_
-  void extract(list_type& source_, const list_type& values_);
+    /// check gamma_tracking::set_extern
+    bool is_extern();
 
-  /// to_ become a unique elements list_type of from_+to_
-  void put_inside(const list_type& from_, list_type& to_);
+    /// Set the minimal probability to continue next combinaisons
+    void set_probability_min(double min_prob_);
 
-  /// if true, only by prob, else by size and then by prob.
-  void set_absolute(bool a_);
-
-  /// check gamma_tracking::set_absolute
-  bool is_absolute();
-
-  /// if true, forbid the starts to be elsewhere than at start
-  void set_extern(bool e_);
-
-  /// check gamma_tracking::set_extern
-  bool is_extern();
-
-  /// Set the minimal probability to continue next combinaisons
-  void set_probability_min(double min_prob_);
-
-  /*!<
+    /*!<
     \param prob_list_ is the probability for a list of gammas below which
     gamma cluster is excluded
     \param starts_ is the post start list_type. After calculation, the function
@@ -147,84 +147,91 @@ class gamma_tracking {
     \sa gamma_tracking::set_absolute \sa gamma_tracking::set_extern
     \sa gamma_tracking::AddStart \sa gamma_tracking::process
 
-  */
-  /// Return the results
-  void get_reflects(solution_type& solution_, double prob_list_ = -1.0,
-                    const list_type* starts_ = 0, const list_type* exclude_ = 0,
-                    bool deathless_starts_ = false);
+    */
+		
+    /// Return all calculated combination.\sa gamma_tracking::process
+    const solution_type& get_all() const;
 
-  /// Return all calculated combination.\sa gamma_tracking::process
-  const solution_type& get_all() const;
+    /// Get the proba for a gamma tracked
+    double get_probability(const list_type& scin_ids_) const;
 
-  /// Get the proba for a gamma tracked
-  double get_probability(const list_type& scin_ids_) const;
+    /// Get the proba between two ref
+    double get_probability(int scin_id1_, int scin_id2_) const;
 
-  /// Get the proba between two ref
-  double get_probability(int scin_id1_, int scin_id2_) const;
+    /// Get the chi square for a gamma tracked
+    double get_chi2(const list_type& scin_ids_) const;
 
-  /// Get the chi square for a gamma tracked
-  double get_chi2(const list_type& scin_ids_) const;
+    /// Get the chi square between two ref
+    double get_chi2(int scin_id1_, int scin_id2_) const;
 
-  /// Get the chi square between two ref
-  double get_chi2(int scin_id1_, int scin_id2_) const;
+    /// Get the chi square limit of _min_prob_ depend on degree of freedom
+    double get_chi_limit(unsigned int);
 
-  /// Classify the two list_type in order of size and proba. Depend on _absolute_
-  static bool sort_reflect(const list_type& ref1_, const list_type& ref2_);
+    /// Get a non mutable reference to internal event data model
+    const event& get_event() const;
 
-  /// Classify a 2D list_type in order of size and proba. Depend on _absolute_
-  void sort_probabilities();
+    /// Get a mutable reference to internal event data model
+    event& grab_event();
 
-  /// Get the chi square limit of _min_prob_ depend on degree of freedom
-  double get_chi_limit(unsigned int);
+    /// Prepare process by computing the internal probability of all calorimeter pairs
+    void prepare_process();
 
-  /// Get a non mutable reference to internal event data model
-  const event& get_event() const;
 
-  /// Get a mutable reference to internal event data model
-  event& grab_event();
+    void initialize_combi();
+    void fill_combi();
+		void sort_list(solution_type &list_);
+		void sort_all_combi();
+		void gamma_selection(solution_type &selected_gamma_);
+		void fuse_all_combi();
+		
+		/// Main calculation before the gamma_tracking::get_reflects
+    void process(solution_type &selected_gamma_);
 
-  /// Prepare process by computing the internal probability of all calorimeter pairs
-  void prepare_process();
-
-  /// Main calculation before the gamma_tracking::get_reflects
-  void process();
-
-  /*!< Calculate all of the possible combinaisons of gamma tracked in the
+    /*!< Calculate all of the possible combinaisons of gamma tracked in the
     limit of gamma_tracking::_min_prob_. If there is prestart
     gamma_tracking::_starts_, it does the calculation only for combinaisons which starts with
     _starts_. \sa gamma_tracking::get_reflects \sa gamma_tracking::AddStart*/
 
-  /// Reset the gamma tracking
-  void reset();
+    /// Reset the gamma tracking
+    void reset();
 
-  /// cout information about current gamma tracking (old)
-  void dump(std::ostream& out_ = std::clog) const;
+    /// cout information about current gamma tracking (old)
+    void dump(std::ostream& out_ = std::clog) const;
+		void print_all_proba();
+		void print_size_combi();
+		list_type convert_int_to_list(int value);
+		
+    /* virtual void tree_dump (std::ostream & out_         = std::clog,  */
+    /* const std::string & title_  = "", */
+    /* const std::string & indent_ = "", */
+    /* bool inherit_               = false) const{} */
+  protected:
+    /// Set default attribute value
+    void _set_defaults();
 
-  /* virtual void tree_dump (std::ostream & out_         = std::clog,  */
-  /* 			const std::string & title_  = "", */
-  /* 			const std::string & indent_ = "", */
-  /* 			bool inherit_               = false) const{} */
- protected:
-  /// Set default attribute value
-  void _set_defaults();
-
- private:
-  datatools::logger::priority _logging_priority_;  //!< Logging priority threshold
-  bool _initialized_;                              //!< Initialization flag
-  bool _absolute_;        //!< Prefer probability rather than size of gamma tracked
-  bool _extern_;          //!< Impose starts in the gamma tracked, not elsewhere
-  int _max_;              //!< Maximum size of a gamma tracked
-  double _min_prob_;      //!< Minimal probability to continue the combinating
-  list_type _starts_;     //!< Start collections (pre and post)
-  solution_type _serie_;  //!< The full gamma tracked combinaisons
-  std::map<int, double>
+  private:
+    datatools::logger::priority _logging_priority_;  //!< Logging priority threshold
+    bool _initialized_;                              //!< Initialization flag
+    bool _absolute_;        //!< Prefer probability rather than size of gamma tracked
+    bool _extern_;          //!< Impose starts in the gamma tracked, not elsewhere
+    bool _initialized_combi_;
+		bool _print_;
+		bool _print_size_;
+		int _max_;              //!< Maximum size of a gamma tracked
+    double _min_prob_;      //!< Minimal probability to continue the combinating
+    list_type _starts_;     //!< Start collections (pre and post)
+		list_type _single_calo_; //! List of all calorimeters 
+    solution_type _pair_calo_;  //!< The gamma tracked pair combinaisons
+    solution_type _combination_;     //!< The gamma tracked combinaisons
+		solution_type _all_combi_;
+    std::map<int, double>
       _min_chi2_;  //!< Dictionnary of chi squares : deg of freedom: size-1 VS the chi2
-  std::map<const list_type*, double>
+    std::map<const list_type*, double>
       _chi2_;  //!< Dictionnary of chi square based on gamma tracked pointer
-  std::map<const list_type*, double>
+    std::map<const list_type*, double>
       _proba_;    //!< Dictionnary of probabilities based on gamma tracked pointer
-  event _event_;  //!< Internal gamma tracking event
-};
+    event _event_;  //!< Internal gamma tracking event
+  };
 }  // namespace gt
 
 #endif  // GT_GAMMA_TRACKING_H
